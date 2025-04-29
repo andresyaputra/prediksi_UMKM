@@ -1,0 +1,85 @@
+/* General styles */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+body {
+    background: linear-gradient(to right, #4e54c8, #8f94fb);
+    color: #fff;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+/* Prediction form */
+.prediksi {
+    width: 80%;
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 30px;
+    background-color: #fff;
+    color: #333;
+    border-radius: 16px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+.prediksi h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #4e54c8;
+    line-height: 1.2;
+    font-weight: bold;
+}
+form {
+    display: grid;
+    gap: 15px;
+}
+label {
+    font-weight: bold;
+    color: #4e54c8;
+}
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #8f94fb;
+    border-radius: 8px;
+    font-size: 16px;
+}
+button[type="submit"] {
+    background-color: #f0a500;
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+button[type="submit"]:hover {
+    background-color: #d18e00;
+}
+
+#result {
+    width: 100%;
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+#result p {
+    margin: 10px 0;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#result .success {
+    color: #28a745;
+}
+
+#result .failure {
+    color: #dc3545;
+}

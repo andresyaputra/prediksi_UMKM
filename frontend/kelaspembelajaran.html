@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kelas Video Pembelajaran</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(to right, #4e54c8, #8f94fb);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      backdrop-filter: blur(30px);
+      box-shadow: 29px 29px 58px #e2e2e23f, 0px 0px 3px rgba(227, 228, 237, 0.37);
+      border: 1.5px solid rgba(255, 255, 255, 0.18);
+      border-radius: 5px;
+      color: #007bff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px 20px;
+    }
+
+    header .navbar-brand {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #007bff;
+    }
+
+    .navbar-nav .nav-link {
+      color: #000;
+      transition: color 0.3s ease;
+      font-size: 1rem;
+      padding: 10px;
+    }
+
+    .navbar-nav .nav-link:hover {
+      color: #f0a500;
+    }
+  </style>
+</head>
+<body class="bg-transparent font-sans antialiased text-white">
+
+  <!-- Header/Navbar -->
+  <header>
+    <nav class="navbar navbar-expand-lg container mx-auto flex justify-between items-center">
+      <a class="navbar-brand" href="/">
+        <img src="../vidio/LOGObg.png" alt="Logo" width="200" />
+      </a>
+      <div class="navbar-nav flex gap-4">
+        <a class="nav-link" href="/home.html">Beranda</a>
+        <a class="nav-link" href="/index.html">Prediksi UMKM</a>
+        <a class="nav-link" href="/kelaspembelajaran.html">Kelas Pembelajaran</a>
+        <a class="nav-link" href="/hubungikami.html">Hubungi Kami</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Konten Halaman -->
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-3xl md:text-4xl font-bold text-center text-white mb-10">
+      Kelas Video Pembelajaran
+    </h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Video Utama -->
+      <div class="md:col-span-2 bg-white p-6 rounded-2xl shadow-xl transition-all duration-500 text-gray-900">
+        <div class="aspect-w-16 aspect-h-9">
+          <video id="mainVideo" class="w-full h-full rounded-xl" controls>
+            <source src="video/sample.mp4" type="video/mp4" />
+            Browser Anda tidak mendukung pemutaran video.
+          </video>
+        </div>
+        <h2 id="videoTitle" class="text-2xl font-semibold mt-5">Judul Video Pembelajaran</h2>
+        <p id="videoDesc" class="text-gray-600 mt-2 text-justify">
+          Ini adalah deskripsi singkat tentang video pembelajaran yang sedang diputar.
+        </p>
+      </div>
+
+      <!-- Daftar Video -->
+      <div class="bg-white p-6 rounded-2xl shadow-xl text-gray-800">
+        <h2 class="text-xl font-semibold mb-4">Video Lainnya</h2>
+        <div id="videoList" class="space-y-3">
+          <!-- Diisi oleh JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script JavaScript -->
+  <script>
+    function generateThumbnail(videoURL) {
+      return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.src = videoURL;
+        video.crossOrigin = 'anonymous';
+        video.preload = 'auto';
+        video.muted = true;
+        video.playsInline = true;
+
+        video.addEventListener('loadeddata', () => {
+          video.currentTime = 1;
+        });
+
+        video.addEventListener('seeked', () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = canvas.toDataURL('image/png');
+          resolve(imageData);
+        });
+
+        video.onerror = () => reject('Gagal membuat thumbnail');
+      });
+    }
+
+    fetch('/api/videos')
+      .then(res => res.json())
+      .then(async videos => {
+        const videoList = document.getElementById('videoList');
+        const mainVideo = document.getElementById('mainVideo');
+        const source = mainVideo.querySelector('source');
+        const titleEl = document.getElementById('videoTitle');
+        const descEl = document.getElementById('videoDesc');
+
+        videoList.innerHTML = '';
+
+        if (videos.length > 0) {
+          source.src = videos[0].video_url;
+          mainVideo.load();
+          titleEl.innerText = videos[0].title;
+          descEl.innerText = videos[0].description;
+        }
+
+        for (const video of videos) {
+          const item = document.createElement('div');
+          item.className = `
+            flex items-center space-x-4 cursor-pointer
+            bg-gray-50 hover:bg-blue-50 p-3 rounded-xl shadow-sm
+            transition duration-300 transform hover:scale-105
+          `;
+
+          let thumbnailSrc = 'video/default-thumbnail.jpg';
+          try {
+            thumbnailSrc = await generateThumbnail(video.video_url);
+          } catch (err) {
+            console.warn(`Thumbnail gagal untuk ${video.title}`);
+          }
+
+          item.innerHTML = `
+            <img src="${thumbnailSrc}" alt="Thumbnail" class="w-20 h-14 object-cover rounded-lg" />
+            <div class="text-gray-800 font-medium">${video.title}</div>
+          `;
+
+          item.onclick = () => {
+            source.src = video.video_url;
+            mainVideo.load();
+            titleEl.innerText = video.title;
+            descEl.innerText = video.description;
+          };
+
+          videoList.appendChild(item);
+        }
+      })
+      .catch(err => console.error('Gagal mengambil video:', err));
+  </script>
+</body>
+</html>

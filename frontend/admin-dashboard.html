@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .card {
+      border-radius: 1rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .table-responsive {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    th, td {
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#">Admin Dashboard</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="adminNavbar">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="#" id="logoutBtn">Logout</a></li>
+          <li class="nav-item"><a class="nav-link" href="admin-vidio.html">Vidio Pembelajaran</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container py-4">
+    <div class="card p-4">
+      <h2 class="mb-4 text-center">Data UMKM (Prediksi)</h2>
+
+      <!-- Form Pencarian -->
+      <form id="searchForm" class="row g-3 mb-3">
+        <div class="col-md-4">
+          <input type="text" class="form-control" id="searchOwner" placeholder="Cari berdasarkan Owner Name" />
+        </div>
+        <div class="col-md-4">
+          <input type="text" class="form-control" id="searchBusiness" placeholder="Cari berdasarkan Business Name" />
+        </div>
+        <div class="col-md-4">
+          <input type="text" class="form-control" id="searchLocation" placeholder="Cari berdasarkan Location" />
+        </div>
+        <div class="col-12 d-flex justify-content-end gap-2">
+          <button type="submit" class="btn btn-primary">Cari</button>
+          <button type="button" class="btn btn-secondary" id="resetBtn">Reset</button>
+        </div>
+      </form>
+
+      <!-- Tabel Data -->
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Owner</th>
+              <th>Business</th>
+              <th>Location</th>
+              <th>Age</th>
+              <th>Education</th>
+              <th>Modal</th>
+              <th>Keuangan</th>
+              <th>Internet</th>
+              <th>Plan</th>
+              <th>Marketing</th>
+              <th>Kemitraan</th>
+              <th>Org Tua</th>
+              <th>Industri</th>
+              <th>Gender</th>
+              <th>Konsultasi</th>
+              <th>Prediction</th>
+              <th>Probability</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="dataBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Tombol Export/Import -->
+      <div class="mt-3 d-flex flex-wrap gap-3 align-items-center">
+        <button class="btn btn-success" id="exportBtn">Export ke Excel</button>
+        <input type="file" id="importFile" accept=".xlsx" class="form-control" style="max-width: 300px;" />
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    // Cek token login admin
+    const token = localStorage.getItem('adminToken');
+    if(!token) {
+      window.location.href = '/admin-login.html';
+    }
+
+    // Fungsi fetch data UMKM
+    async function fetchData(queryParams = {}) {
+      const queryString = new URLSearchParams(queryParams).toString();
+      const res = await fetch('http://127.0.0.1:3000/admin/data?' + queryString, {
+        headers: { 'Authorization': token }
+      });
+      const data = await res.json();
+      return data;
+    }
+
+    // Render data ke tabel
+    async function renderData(queryParams = {}) {
+      const data = await fetchData(queryParams);
+      const tbody = document.getElementById('dataBody');
+      tbody.innerHTML = '';
+      data.forEach(item => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.id}</td>
+            <td>${item.owner_name}</td>
+            <td>${item.business_name}</td>
+            <td>${item.business_location}</td>
+            <td>${item.age}</td>
+            <td>${convertEducation(item.education)}</td>
+            <td>${convertModal(item.initial_capital)}</td>
+            <td>${convertKeuangan(item.financial_record_keeping)}</td>
+            <td>${convertBinary(item.internet_usage)}</td>
+            <td>${convertBinary(item.business_plan)}</td>
+            <td>${item.marketing_effort}</td>
+            <td>${convertBinary(item.partnership)}</td>
+            <td>${convertBinary(item.parent_business_experience)}</td>
+            <td>${item.industry_experience}</td>
+            <td>${convertGender(item.owner_gender)}</td>
+            <td>${item.professional_advice}</td>
+            <td>${item.prediction}</td>
+            <td>${(item.probability * 100).toFixed(2)}%</td>
+            <td>
+              <button class="btn btn-warning btn-sm" onclick="editData(${item.id})">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteData(${item.id})">Hapus</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Fungsi konversi angka ke huruf sesuai keterangan
+    function convertEducation(num) {
+      switch(Number(num)){
+        case 1: return 'SD';
+        case 2: return 'SMP';
+        case 3: return 'SMA';
+        case 4: return 'Sarjana';
+        default: return num;
+      }
+    }
+    function convertModal(num) {
+      return Number(num) === 1 ? 'Memadai' : 'Tidak Memadai';
+    }
+    function convertKeuangan(num) {
+      return Number(num) === 1 ? 'Baik' : 'Buruk';
+    }
+    function convertBinary(num) {
+      return Number(num) === 1 ? 'Ya' : 'Tidak';
+    }
+    function convertGender(num) {
+      return Number(num) === 1 ? 'Laki-laki' : 'Perempuan';
+    }
+
+  
+    // Event: Pencarian
+    document.getElementById('searchForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const owner = document.getElementById('searchOwner').value;
+      const business = document.getElementById('searchBusiness').value;
+      const location = document.getElementById('searchLocation').value;
+      renderData({ owner, business, location });
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      document.getElementById('searchOwner').value = '';
+      document.getElementById('searchBusiness').value = '';
+      document.getElementById('searchLocation').value = '';
+      renderData();
+    });
+
+    // Export data ke Excel menggunakan library XLSX
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+      const data = await fetchData();
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "UMKM");
+      XLSX.writeFile(workbook, "data_umkm.xlsx");
+    });
+
+    // Import Excel
+    document.getElementById('importFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      
+      // Kirim data import ke backend
+      const res = await fetch('http://127.0.0.1:3000/admin/import', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({ data: jsonData })
+      });
+      const result = await res.json();
+      alert(result.message);
+      renderData();
+    });
+
+    // Fungsi delete data
+    async function deleteData(id) {
+      if(confirm("Yakin hapus data?")){
+        const res = await fetch(`http://127.0.0.1:3000/admin/delete/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': token }
+        });
+        const result = await res.json();
+        alert(result.message);
+        renderData();
+      }
+    }
+
+    // Fungsi edit data (contoh sederhana: redirect ke halaman edit, atau modal edit)
+    function editData(id) {
+      window.location.href = `/admin-edit.html?id=${id}`;
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin-login.html';
+    });
+
+    // Render data saat halaman load
+    renderData();
+  </script>
+</body>
+</html>
